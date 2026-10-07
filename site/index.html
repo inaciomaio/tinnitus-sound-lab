@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; connect-src 'self' https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Tinnitus Sound Lab</title>
+<meta name="description" content="Match your tinnitus pitch, run bilateral alternation sound sessions, and log how long the relief lasts. Runs entirely in your browser.">
+<meta name="theme-color" content="#E9EEEC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101614" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2318211F'/%3E%3Cpath d='M5 16h4l3-8 4 16 4-12 3 4h4' fill='none' stroke='%23EBA43C' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script type="module" src="js/main.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Tinnitus Sound Lab</h1>
+      <p class="sub">Bilateral alternation experiments. Change one variable at a time, log every session.</p>
+    </div>
+    <span class="chip" id="storeChip">Loading log…</span>
+  </header>
+
+  <div class="safety"><b>Keep it quiet.</b> Start at the lowest level you can clearly hear. If your tinnitus gets louder after a session, stop using those settings. Headphones required. This is an experiment tool, not a medical treatment.</div>
+
+  <main class="grid">
+    <div class="col">
+      <section class="panel" id="matchPanel">
+        <h2><span class="n">01</span>Match your pitch</h2>
+        <p class="hint">Play a tone and adjust it until it sounds like your tinnitus. Check the octave above and below: octave mistakes are common.</p>
+        <div class="big" id="matchHz">6000<small>Hz</small></div>
+        <div class="ro left" id="matchNote">F♯8</div>
+        <input type="range" id="matchSlider" min="0" max="1000" aria-label="Match frequency">
+        <div class="row">
+          <button id="mOctDn">−1 oct</button><button id="mStDn">−1 st</button><button id="mCentDn">−10 ¢</button>
+          <button id="mCentUp">+10 ¢</button><button id="mStUp">+1 st</button><button id="mOctUp">+1 oct</button>
+        </div>
+        <div class="row">
+          <div class="seg" role="group" aria-label="Match sound">
+            <button id="mTone" aria-pressed="true">Tone</button><button id="mNoise" aria-pressed="false">Hiss (narrow noise)</button>
+          </div>
+          <button id="matchPlay">Play match</button>
+          <button class="primary" id="matchUse">Set as my pitch</button>
+        </div>
+        <div class="kv"><span>Your tinnitus pitch</span><b id="pitchOut">6000 Hz</b></div>
+      </section>
+
+      <section class="panel" id="genPanel">
+        <h2><span class="n">02</span>Generator <span class="locked" id="lockNote" hidden>locked during session</span></h2>
+        <p class="hint">Stereo depth 100% with a hard switch is a full 1/0 left-right swap. Depth 0% is a steady sound in both ears, a useful control.</p>
+        <div class="field"><label for="offset">Carrier offset</label><input type="range" id="offset" min="-24" max="24" step="1"><div class="ro" id="offsetOut"></div></div>
+        <div class="field"><label for="rate">Alternation rate</label><input type="range" id="rate" min="0" max="1000"><div class="ro" id="rateOut"></div></div>
+        <div class="field"><label for="depth">Stereo depth</label><input type="range" id="depth" min="0" max="100"><div class="ro" id="depthOut"></div></div>
+        <div class="field"><label for="edge">Switch shape</label><input type="range" id="edge" min="0" max="100"><div class="ro" id="edgeOut"></div></div>
+        <div class="field"><label for="mix">Tone ↔ noise</label><input type="range" id="mix" min="0" max="100"><div class="ro" id="mixOut"></div></div>
+        <div class="field"><label for="bw">Noise bandwidth</label><input type="range" id="bw" min="10" max="200"><div class="ro" id="bwOut"></div></div>
+        <div class="field"><label for="vol">Level</label><input type="range" id="vol" min="-80" max="-15" step="1"><div class="ro" id="volOut"></div></div>
+        <div class="row"><button id="previewBtn">Preview</button><span class="hint">Preview is not logged.</span></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" id="sessionPanel">
+        <h2><span class="n">03</span>Run a session</h2>
+        <canvas class="ears" id="ears" width="700" height="300" aria-label="Live left and right ear levels"></canvas>
+        <div class="legend"><span class="l">● Left ear</span><span class="r">● Right ear</span></div>
+
+        <div class="step" id="stepBefore">
+          <h3>Before</h3>
+          <div class="field"><label for="before">Loudness now</label><input type="range" id="before" min="0" max="10" step="1" value="5"><div class="ro" id="beforeOut">5 / 10</div></div>
+          <div class="pair">
+            <label>Where is it?<select id="locBefore"><option>Left</option><option>Right</option><option selected>Both ears</option><option>Centre of head</option><option>Hard to tell</option></select></label>
+            <label>Session length<select id="dur"><option value="60">1 min</option><option value="120">2 min</option><option value="180" selected>3 min</option><option value="300">5 min</option><option value="600">10 min</option></select></label>
+          </div>
+          <div class="row"><button class="primary" id="startBtn">Start session</button></div>
+        </div>
+
+        <div class="step" id="stepPlay" hidden>
+          <h3>Listening</h3>
+          <div class="big" id="countdown">3:00</div>
+          <div class="row"><button id="stopEarly">Stop now</button></div>
+        </div>
+
+        <div class="step" id="stepAfter" hidden>
+          <h3>After · time since sound stopped</h3>
+          <div class="big" id="stopwatch">0:00</div>
+          <div class="field"><label for="after">Loudness right after</label><input type="range" id="after" min="0" max="10" step="1" value="5"><div class="ro" id="afterOut">5 / 10</div></div>
+          <div class="pair">
+            <label>Where is it now?<select id="locAfter"><option>Left</option><option>Right</option><option>Both ears</option><option selected>Centre of head</option><option>Hard to tell</option></select></label>
+            <label>Pitch change<select id="pitchShift"><option>Same</option><option>Lower</option><option>Higher</option><option>Unsure</option></select></label>
+          </div>
+          <div class="row">
+            <button class="primary" id="baselineBtn">Back to baseline now</button>
+            <button id="noEffectBtn">No change at all</button>
+            <span class="recorded" id="recordedOut"></span>
+          </div>
+          <label class="notes-label" for="notes">Notes<textarea id="notes" placeholder="e.g. went quiet for a few seconds, then crept back from the left"></textarea></label>
+          <div class="row"><button class="primary" id="saveBtn" disabled>Save session</button><button class="danger" id="discardBtn">Discard</button></div>
+        </div>
+        <div class="toast" id="toast" role="status"></div>
+      </section>
+    </div>
+  </main>
+
+  <section class="panel" id="logPanel">
+    <h2><span class="n">04</span>Log</h2>
+    <div class="stats" id="stats"></div>
+    <div id="bestBox"></div>
+    <div class="chartbox" id="chart"></div>
+    <div id="tableWrap"></div>
+
+    <div class="io">
+      <h3 class="subhead">Files</h3>
+      <div class="row">
+        <button id="exportJson">Export backup (JSON)</button>
+        <button id="exportCsv">Export for spreadsheets (CSV)</button>
+        <button id="importBtn">Import log files…</button>
+        <input type="file" id="importFile" accept=".json,.csv,application/json,text/csv" multiple hidden>
+      </div>
+      <p class="hint">Import reads JSON backups and CSV exports from any version, including the first prototype. Imports merge with your log; duplicates are skipped. You can also drop files onto this panel.</p>
+      <div class="toast" id="logMsg" role="status"></div>
+    </div>
+
+    <div class="io" id="drivePanel" hidden>
+      <h3 class="subhead">Google Drive sync</h3>
+      <p class="drive-status" id="driveStatus"></p>
+      <div class="row">
+        <button class="primary" id="driveConnect">Connect Google Drive</button>
+        <button id="driveSync" hidden>Sync now</button>
+        <button class="danger" id="driveDisconnect" hidden>Disconnect</button>
+      </div>
+      <p class="hint">Optional. The site only gets access to the one log file it creates in your Drive, not your other files. Syncing merges both copies, so you can use several devices.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Everything runs in your browser. Your log stays on this device unless you export it or turn on Drive sync. Not a medical device. See a doctor or audiologist about tinnitus in one ear, pulsing tinnitus, or tinnitus that started suddenly.</p>
+    <span><a href="https://github.com/inaciomaio/tinnitus-sound-lab">Source</a> · <span id="appVersion"></span></span>
+  </footer>
+</div>
+</body>
+</html>

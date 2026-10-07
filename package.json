@@ -1,0 +1,14 @@
+{
+  "name": "tinnitus-sound-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pitch matcher, bilateral alternation sound generator and session log for tinnitus self-experiments.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "python3 -m http.server 8000 --directory site"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

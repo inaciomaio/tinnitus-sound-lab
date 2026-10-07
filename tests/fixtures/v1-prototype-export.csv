@@ -1,0 +1,4 @@
+t,pitch,carrier,offset,rate,depth,edge,mix,bw,vol,durationSec,before,after,locBefore,locAfter,pitchShift,returnSec,notes
+2026-10-07T20:15:03.120Z,6000,6000,0,6,100,100,100,0.5,-50,180,6,3,Both ears,Centre of head,Lower,74,"went quiet, then came back from the ""left"""
+2026-10-07T20:30:41.877Z,6000,6727,2,12,100,0,0,0.25,-48,180,5,6,Both ears,Right,Higher,0,"line one
+line two"
